@@ -64,8 +64,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        java: [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ]
+        os: [ windows-latest ]
+        java: [ 16 ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
@@ -97,7 +97,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: apktool.jar
-          path: brut.apktool/apktool-cli/build/libs/apktool-*-small.jar
+          path: build/apktool-*-small.jar
 
   analyze:
     name: Analyze
@@ -110,10 +110,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v1
+        uses: github/codeql-action/init@v2
         with:
           languages: ${{ matrix.language }}
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v1
+        uses: github/codeql-action/autobuild@v2
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v1
+        uses: github/codeql-action/analyze@v2
