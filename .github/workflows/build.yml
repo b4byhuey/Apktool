@@ -18,30 +18,6 @@ env:
   BINARY_PATH: brut.apktool/apktool-lib/src/main/resources/prebuilt
 
 jobs:
-  analyze-mac-aapt:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        file: [ aapt_64, aapt2_64 ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Verify Executable
-        run: ${{ env.BINARY_PATH }}/macosx/${{ matrix.file }} version
-      - name: Output Static
-        run: otool -L ${{ env.BINARY_PATH }}/macosx/${{ matrix.file }} || true
-
-  analyze-linux-aapt:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        file: [ aapt, aapt_64, aapt2, aapt2_64 ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Verify Executable
-        run: ${{ env.BINARY_PATH }}/linux/${{ matrix.file }} version
-      - name: Output Static
-        run: ldd ${{ env.BINARY_PATH }}/linux/${{ matrix.file }} || true
-
   analyze-windows-aapt:
     runs-on: windows-latest
     strategy:
@@ -57,8 +33,6 @@ jobs:
   build-and-test-with-Java-8-and-later:
     runs-on: ${{ matrix.os }}
     needs:
-      - analyze-mac-aapt
-      - analyze-linux-aapt
       - analyze-windows-aapt
     name: Build/Test (JDK ${{ matrix.java }}, ${{ matrix.os }})
     strategy:
@@ -97,23 +71,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: apktool.jar
-          path: build/apktool-*-small.jar
-
-  analyze:
-    name: Analyze
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'java' ]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: ${{ matrix.language }}
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+          path: build/apktool-*-small.jar  
