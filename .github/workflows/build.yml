@@ -29,16 +29,10 @@ jobs:
         run: ${{ env.BINARY_PATH }}/windows/${{ matrix.file }} version
       - name: Output Static
         run: ldd ${{ env.BINARY_PATH }}/windows/${{ matrix.file }} || true
-<<<<<<< HEAD
         
   build-apktool:
-=======
-
-  build-and-test-with-Java-8-and-later:
     runs-on: ${{ matrix.os }}
-    needs:
-      - analyze-mac-aapt
-      - analyze-linux-aapt
+    needs:      
       - analyze-windows-aapt
     name: Build/Test (JDK ${{ matrix.java }}, ${{ matrix.os }})
     strategy:
@@ -58,7 +52,6 @@ jobs:
           arguments: build shadowJar proguard
 
   upload-artifact:
->>>>>>> test
     runs-on: ubuntu-latest
     name: Build apktool.jar
     if: github.repository == 'b4byhuey/Apktool' && github.ref == 'refs/heads/master' 
