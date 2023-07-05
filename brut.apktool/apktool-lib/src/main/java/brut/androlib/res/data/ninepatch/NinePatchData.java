@@ -14,13 +14,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package brut.androlib.res.decoder.ninepatch;
+package brut.androlib.res.data.ninepatch;
 
 import brut.util.ExtDataInput;
 import java.io.IOException;
 
-public class NinePatchData
-{
+public class NinePatchData {
     public final int padLeft, padRight, padTop, padBottom;
     public final int[] xDivs, yDivs;
 
