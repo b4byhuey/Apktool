@@ -154,7 +154,7 @@ The hashes match so we are good with the backup server.
 
 #### Sonatype
 
-You'll want to log in and view the Staging repostories and confirm you see the recently made build. You'll want to:
+You'll want to log in and view the Staging repositories and confirm you see the recently made build. You'll want to:
 
  * Close it (Wait for audit report email)
  * Release it (Drop the staging repository)
@@ -208,10 +208,9 @@ The Apktool project website has a few locations to update:
 
 1. The homepage intro
 2. The download link in header
-3. The changelog page
-4. The footer of homepage with history of releases.
+3. Migrating `unreleased.mx` to a new blog post.
 
-The easiest way to describe this is to just link to a [previous release](https://github.com/iBotPeaches/Apktool/commit/5ef77bf01cf3625cb1dd1981234b3854b02496e2).
+The easiest way to describe this is to just link to a [previous release](https://github.com/iBotPeaches/Apktool/pull/3146/files).
 
 ### Update Milestones
 

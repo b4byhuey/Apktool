@@ -26,6 +26,11 @@ import brut.androlib.res.data.value.ResAttr;
 import brut.androlib.res.data.value.ResScalarValue;
 
 public class ResAttrDecoder {
+
+    public ResAttrDecoder(ResTable resTable) {
+        mResTable = resTable;
+    }
+
     public String decode(int type, int value, String rawValue, int attrResId)
         throws AndrolibException {
         ResScalarValue resValue = mResTable.getCurrentResPackage().getValueFactory().factory(type, value, rawValue);
@@ -46,10 +51,8 @@ public class ResAttrDecoder {
         throws AndrolibException {
 
         if (attrResId != 0) {
-            ResID resId = new ResID(attrResId);
-
             try {
-                ResResSpec resResSpec = mResTable.getResSpec(resId);
+                ResResSpec resResSpec = mResTable.getResSpec(attrResId);
                 if (resResSpec != null) {
                     return resResSpec.getName();
                 }

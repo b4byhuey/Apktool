@@ -22,6 +22,7 @@ import brut.androlib.exceptions.OutDirExistsException;
 import brut.androlib.apk.ApkInfo;
 import brut.androlib.res.ResourcesDecoder;
 import brut.androlib.res.data.*;
+import brut.androlib.res.xml.ResXmlPatcher;
 import brut.androlib.src.SmaliDecoder;
 import brut.directory.Directory;
 import brut.directory.ExtFile;
@@ -50,6 +51,10 @@ public class ApkDecoder {
     private final static String[] APK_STANDARD_ALL_FILENAMES = new String[] {
         "classes.dex", "AndroidManifest.xml", "resources.arsc", "res", "r", "R",
         "lib", "libs", "assets", "META-INF", "kotlin" };
+    private final static String[] APK_RESOURCES_FILENAMES = new String[] {
+        "resources.arsc", "res", "r", "R" };
+    private final static String[] APK_MANIFEST_FILENAMES = new String[] {
+        "AndroidManifest.xml" };
     private final static Pattern NO_COMPRESS_PATTERN = Pattern.compile("(" +
         "jpg|jpeg|png|gif|wav|mp2|mp3|ogg|aac|mpg|mpeg|mid|midi|smf|jet|rtttl|imy|xmf|mp4|" +
         "m4a|m4v|3gp|3gpp|3g2|3gpp2|amr|awb|wma|wmv|webm|webp|mkv)$");
@@ -72,7 +77,7 @@ public class ApkDecoder {
         this(config, new ExtFile(apkFile));
     }
 
-    public void decode(File outDir) throws AndrolibException, IOException, DirectoryException {
+    public ApkInfo decode(File outDir) throws AndrolibException, IOException, DirectoryException {
         try {
             if (!mConfig.forceDelete && outDir.exists()) {
                 throw new OutDirExistsException();
@@ -92,8 +97,27 @@ public class ApkDecoder {
             LOGGER.info("Using Apktool " + ApktoolProperties.getVersion() + " on " + mApkFile.getName());
 
             ResourcesDecoder resourcesDecoder = new ResourcesDecoder(mConfig, mApkFile);
-            resourcesDecoder.decodeManifest(outDir);
-            resourcesDecoder.decodeResources(outDir);
+            if (hasResources()) {
+                switch (mConfig.decodeResources) {
+                    case Config.DECODE_RESOURCES_NONE:
+                        copyResourcesRaw(outDir);
+                        break;
+                    case Config.DECODE_RESOURCES_FULL:
+                        resourcesDecoder.decodeResources(outDir);
+                        break;
+                }
+            }
+
+            if (hasManifest()) {
+                if (mConfig.decodeResources == Config.DECODE_RESOURCES_FULL ||
+                    mConfig.forceDecodeManifest == Config.FORCE_DECODE_MANIFEST_FULL) {
+                    resourcesDecoder.decodeManifest(outDir);
+                }
+                else {
+                    copyManifestRaw(outDir);
+                }
+            }
+            resourcesDecoder.updateApkInfo(outDir);
 
             if (hasSources()) {
                 switch (mConfig.decodeSources) {
@@ -132,9 +156,11 @@ public class ApkDecoder {
                     }
                 }
             }
+
+            // In case we have no resources. We should store the minSdk we pulled from the source opcode api level
             ApkInfo apkInfo = resourcesDecoder.getApkInfo();
-            if (mMinSdkVersion > 0) {
-                apkInfo.setSdkInfo(getMinSdkInfo());
+            if (!hasResources() && mMinSdkVersion > 0) {
+                apkInfo.setSdkInfoField("minSdkVersion", Integer.toString(mMinSdkVersion));
             }
 
             copyRawFiles(outDir);
@@ -143,10 +169,28 @@ public class ApkDecoder {
             recordUncompressedFiles(apkInfo, resourcesDecoder.getResFileMapping(), mUncompressedFiles);
             copyOriginalFiles(outDir);
             writeApkInfo(apkInfo, outDir);
+
+            return apkInfo;
         } finally {
             try {
                 mApkFile.close();
             } catch (IOException ignored) {}
+        }
+    }
+
+    private boolean hasManifest() throws AndrolibException {
+        try {
+            return mApkFile.getDirectory().containsFile("AndroidManifest.xml");
+        } catch (DirectoryException ex) {
+            throw new AndrolibException(ex);
+        }
+    }
+
+    private boolean hasResources() throws AndrolibException {
+        try {
+            return mApkFile.getDirectory().containsFile("resources.arsc");
+        } catch (DirectoryException ex) {
+            throw new AndrolibException(ex);
         }
     }
 
@@ -183,10 +227,24 @@ public class ApkDecoder {
         }
     }
 
-    private Map<String, String> getMinSdkInfo() {
-        Map<String, String> sdkInfo = new LinkedHashMap<>();
-        sdkInfo.put("minSdkVersion", Integer.toString(mMinSdkVersion));
-        return sdkInfo;
+    private void copyManifestRaw(File outDir)
+        throws AndrolibException {
+        try {
+            LOGGER.info("Copying raw manifest...");
+            mApkFile.getDirectory().copyToDir(outDir, APK_MANIFEST_FILENAMES);
+        } catch (DirectoryException ex) {
+            throw new AndrolibException(ex);
+        }
+    }
+
+    private void copyResourcesRaw(File outDir)
+        throws AndrolibException {
+        try {
+            LOGGER.info("Copying raw resources...");
+            mApkFile.getDirectory().copyToDir(outDir, APK_RESOURCES_FILENAMES);
+        } catch (DirectoryException ex) {
+            throw new AndrolibException(ex);
+        }
     }
 
     private void copySourcesRaw(File outDir, String filename)

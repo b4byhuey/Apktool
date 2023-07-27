@@ -42,6 +42,12 @@ public class Main {
         // headless
         System.setProperty("java.awt.headless", "true");
 
+        // Ignore stricter validation on zip files from java 11 onwards as this is a protection technique
+        // that applications use to thwart disassembly tools. We have protections in place for directory traversal
+        // and handling of bogus data in the zip header, so we can ignore this.
+        System.setProperty("jdk.nio.zipfs.allowDotZipEntry", "true");
+        System.setProperty("jdk.util.zip.disableZip64ExtraFieldValidation", "true");
+
         // set verbosity default
         Verbosity verbosity = Verbosity.NORMAL;
 
@@ -177,7 +183,8 @@ public class Main {
             outDir = new File(outName);
         }
 
-        ApkDecoder decoder = new ApkDecoder(config, new ExtFile(apkName));
+        ExtFile apkFile = new ExtFile(apkName);
+        ApkDecoder decoder = new ApkDecoder(config, apkFile);
 
         try {
             decoder.decode(outDir);
@@ -189,7 +196,7 @@ public class Main {
                             + "already exists. Use -f switch if you want to overwrite it.");
             System.exit(1);
         } catch (InFileNotFoundException ex) {
-            System.err.println("Input file (" + apkName + ") " + "was not found or was not readable.");
+            System.err.println("Input file (" + apkFile.getAbsolutePath() + ") " + "was not found or was not readable.");
             System.exit(1);
         } catch (CantFindFrameworkResException ex) {
             System.err
@@ -300,12 +307,12 @@ public class Main {
         // create options
         Option versionOption = Option.builder("version")
                 .longOpt("version")
-                .desc("prints the version then exits")
+                .desc("Print the version.")
                 .build();
 
         Option advanceOption = Option.builder("advance")
                 .longOpt("advanced")
-                .desc("prints advance information.")
+                .desc("Print advanced information.")
                 .build();
 
         Option noSrcOption = Option.builder("s")
@@ -340,7 +347,7 @@ public class Main {
 
         Option analysisOption = Option.builder("m")
                 .longOpt("match-original")
-                .desc("Keeps files to closest to original as possible. Prevents rebuild.")
+                .desc("Keep files to closest to original as possible (prevents rebuild).")
                 .build();
 
         Option apiLevelOption = Option.builder("api")
@@ -352,17 +359,17 @@ public class Main {
 
         Option debugBuiOption = Option.builder("d")
                 .longOpt("debug")
-                .desc("Sets android:debuggable to \"true\" in the APK's compiled manifest")
+                .desc("Set android:debuggable to \"true\" in the APK's compiled manifest.")
                 .build();
 
         Option netSecConfOption = Option.builder("n")
-            .longOpt("net-sec-conf")
-            .desc("Adds a generic Network Security Configuration file in the output APK")
-            .build();
+                .longOpt("net-sec-conf")
+                .desc("Add a generic Network Security Configuration file in the output APK")
+                .build();
 
         Option noDbgOption = Option.builder("b")
                 .longOpt("no-debug-info")
-                .desc("don't write out debug info (.local, .param, .line, etc.)")
+                .desc("Do not write out debug info (.local, .param, .line, etc.)")
                 .build();
 
         Option forceDecOption = Option.builder("f")
@@ -372,21 +379,21 @@ public class Main {
 
         Option frameTagOption = Option.builder("t")
                 .longOpt("frame-tag")
-                .desc("Uses framework files tagged by <tag>.")
+                .desc("Use framework files tagged by <tag>.")
                 .hasArg(true)
                 .argName("tag")
                 .build();
 
         Option frameDirOption = Option.builder("p")
                 .longOpt("frame-path")
-                .desc("Uses framework files located in <dir>.")
+                .desc("Use framework files located in <dir>.")
                 .hasArg(true)
                 .argName("dir")
                 .build();
 
         Option frameIfDirOption = Option.builder("p")
                 .longOpt("frame-path")
-                .desc("Stores framework files into <dir>.")
+                .desc("Store framework files into <dir>.")
                 .hasArg(true)
                 .argName("dir")
                 .build();
@@ -408,17 +415,17 @@ public class Main {
                 .longOpt("aapt")
                 .hasArg(true)
                 .argName("loc")
-                .desc("Loads aapt from specified location.")
+                .desc("Load aapt from specified location.")
                 .build();
 
         Option aapt2Option = Option.builder()
                 .longOpt("use-aapt2")
-                .desc("Upgrades apktool to use experimental aapt2 binary.")
+                .desc("Use aapt2 binary instead of aapt1 during the build step.")
                 .build();
 
         Option originalOption = Option.builder("c")
                 .longOpt("copy-original")
-                .desc("Copies original AndroidManifest.xml and META-INF. See project page for more info.")
+                .desc("Copy original AndroidManifest.xml and META-INF. See project page for more info.")
                 .build();
 
         Option noCrunchOption = Option.builder("nc")
@@ -435,14 +442,14 @@ public class Main {
 
         Option outputBuiOption = Option.builder("o")
                 .longOpt("output")
-                .desc("The name of apk that gets written. Default is dist/name.apk")
+                .desc("The name of apk that gets written. (default: dist/name.apk)")
                 .hasArg(true)
                 .argName("dir")
                 .build();
 
         Option outputDecOption = Option.builder("o")
                 .longOpt("output")
-                .desc("The name of folder that gets written. Default is apk.out")
+                .desc("The name of folder that gets written. (default: apk.out)")
                 .hasArg(true)
                 .argName("dir")
                 .build();
@@ -573,8 +580,8 @@ public class Main {
 
         // print out more information
         System.out.println(
-                "For additional info, see: https://ibotpeaches.github.io/Apktool/ \n"
-                        + "For smali/baksmali info, see: https://github.com/JesusFreke/smali");
+                "For additional info, see: https://apktool.org/ \n"
+                        + "For smali/baksmali info, see: https://github.com/google/smali");
     }
 
     private static void setupLogging(final Verbosity verbosity) {
