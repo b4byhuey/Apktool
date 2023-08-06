@@ -16,23 +16,21 @@
  */
 package brut.androlib.apk;
 
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.nodes.Node;
-import org.yaml.snakeyaml.representer.Representer;
+import brut.androlib.exceptions.AndrolibException;
+import org.junit.Test;
 
-public class EscapedStringRepresenter extends Representer {
-    public EscapedStringRepresenter() {
-        super(new DumperOptions());
-        RepresentStringEx representStringEx = new RepresentStringEx();
-        multiRepresenters.put(String.class, representStringEx);
-        representers.put(String.class, representStringEx);
-    }
+import static org.junit.Assert.*;
 
-    private class RepresentStringEx extends RepresentString {
+public class DoNotCompressHieroglyphTest {
 
-        @Override
-        public Node representData(Object data) {
-            return super.representData(YamlStringEscapeUtils.escapeString(data.toString()));
-        }
+    @Test
+    public void testHieroglyph() throws AndrolibException {
+        ApkInfo apkInfo = ApkInfo.load(
+            this.getClass().getResourceAsStream("/apk/donotcompress_with_hieroglyph.yml"));
+        assertEquals("2.0.0", apkInfo.version);
+        assertEquals("testapp.apk", apkInfo.apkFileName);
+        assertEquals(2, apkInfo.doNotCompress.size());
+        assertEquals("assets/AllAssetBundles/Andriod/tx_1001_冰原1", apkInfo.doNotCompress.get(0));
+        assertEquals("assets/AllAssetBundles/Andriod/tx_1001_冰原1.manifest", apkInfo.doNotCompress.get(1));
     }
 }
