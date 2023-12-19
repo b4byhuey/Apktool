@@ -24,12 +24,12 @@ import brut.util.Duo;
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
-public class ResStyleValue extends ResBagValue implements
-        ResValuesXmlSerializable {
-    ResStyleValue(ResReferenceValue parent,
-                  Duo<Integer, ResScalarValue>[] items, ResValueFactory factory) {
+public class ResStyleValue extends ResBagValue implements ResValuesXmlSerializable {
+    ResStyleValue(ResReferenceValue parent, Duo<Integer, ResScalarValue>[] items, ResValueFactory factory) {
         super(parent);
 
         mItems = new Duo[items.length];
@@ -49,11 +49,13 @@ public class ResStyleValue extends ResBagValue implements
         } else if (res.getResSpec().getName().indexOf('.') != -1) {
             serializer.attribute(null, "parent", "");
         }
+
+        Set<String> processedNames = new HashSet<>();
         for (Duo<ResReferenceValue, ResScalarValue> mItem : mItems) {
             ResResSpec spec = mItem.m1.getReferent();
 
             if (spec == null) {
-                LOGGER.fine(String.format("null reference: m1=0x%08x(%s), m2=0x%08x(%s)",
+                LOGGER.fine(String.format("null style reference: m1=0x%08x(%s), m2=0x%08x(%s)",
                     mItem.m1.getRawIntValue(), mItem.m1.getType(), mItem.m2.getRawIntValue(), mItem.m2.getType()));
                 continue;
             }
@@ -72,6 +74,11 @@ public class ResStyleValue extends ResBagValue implements
                 name = "@" + spec.getFullName(res.getResSpec().getPackage(), false);
             }
 
+            // #3400 - Skip duplicate values, commonly seen are duplicate key-pairs on styles.
+            if (!isAnalysisMode() && processedNames.contains(name)) {
+                continue;
+            }
+
             if (value == null) {
                 value = mItem.m2.encodeAsResXmlValue();
             }
@@ -84,8 +91,11 @@ public class ResStyleValue extends ResBagValue implements
             serializer.attribute(null, "name", name);
             serializer.text(value);
             serializer.endTag(null, "item");
+
+            processedNames.add(name);
         }
         serializer.endTag(null, "style");
+        processedNames.clear();
     }
 
     private final Duo<ResReferenceValue, ResScalarValue>[] mItems;
